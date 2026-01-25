@@ -1,0 +1,68 @@
+# 0
+# load "list-of"
+# load can also be given as a command line argument to Athena
+# take into account that ;; signals end of input in Athena' interactive mode.
+module Basic {
+
+    # 1 A domain is simply a set of object that we want to tal about.
+    domain Person
+    # Multiple domains can be introduce in the same line.
+    domains Element, Set
+
+    # 2 Function symbols denote operations on Domain
+    declare father: [Person] -> Person
+    # Multiple function symbols with same signature can be declare separated by commas
+    declare union, intersection: [Set Set] -> Set
+    declare father, mother: [Person] -> Person
+    # A function symbol of arity zero is called a constant symbol or simply a constant
+    declare null: Set
+    declare peter, tom, ann : Person
+    declare e0, e1, e2: Element
+    declare set0, set1, set2: Set 
+    # FUnction symbols whose range is Boolean are also called a relation
+    declare in: [Element Set] -> Boolean
+    declare male, female: [Person] -> Boolean
+    declare siblings: [Person Person] -> Boolean
+    declare subset: [Set Set] -> Boolean
+
+    # 3 An Athena procedure is a lambda abstraction written by users to compute
+    # () is usted as the procedure evaluation method
+    define (fact n) :=
+        check {
+            (n less? 1) => 1
+            | else => (n times fact n minus 1)
+        }
+
+    # 4 Terms Examples
+    # ?x:Person, ?S25:Set, ?foo-bat:Int, ?b_1:Boolean, ?!sd%&*^:Real
+    # What else.... 2+2?
+    # (println (sort-of tom))
+    # what about?
+    # (father true) or (in ?x ?x)
+
+    # 5 Atomic sentences, or just atoms, are simply terms of sort Boolean
+    # (siblings peter (father peter))
+    # (subset ?s1 (union ?s1 ?s2))
+    # there are several sentential constructors...
+    (~ ?p)           # (not ?p) negation
+    (& ?p ?q)        # Conjunction
+    (| ?p ?q)        # Disjunction
+    (==> ?p ?q)      # Conditional
+    (<==> ?p ?q)     # Biconditional
+    # Quantified Sentences
+    (forall ?x . ?x =/= father ?x)
+    (forall ?S1 ?S2 . ?S1 = ?S2 <==> ?S1 subset ?S2 & ?S2 subset ?S1)
+    # TODO: Modify/add this file to be able to translate the following sentences to Athena
+        # - 'tom' grandfather
+        # - 'tom is not a female'
+        # - 'tom and peter are not female'
+        # - 'tom' mom is a female
+        # - 'All persons have a father'
+        # - 'The father of a father is a grandfather'
+        # - 'The father of all is unique' 
+    
+    # 6 Definitions let us give a name to a value and then subsequently refer to the
+    # value by that name.
+    define toms_grandfather := (father father tom)
+    define I_am_not_my_father := (forall ?x . ?x =/= father ?x)
+}
