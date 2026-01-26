@@ -4,6 +4,7 @@
 # take into account that ;; signals end of input in Athena' interactive mode.
 module Basic {
 
+    
     # 1 A domain is simply a set of object that we want to tal about.
     domain Person
     # Multiple domains can be introduce in the same line.
@@ -55,7 +56,7 @@ module Basic {
     # TODO: Modify/add this file to be able to translate the following sentences to Athena
         # - 'tom' grandfather
         # - 'tom is not a female'
-        # - 'tom and peter are not female'
+        # - 'jerry and peter are not female'
         # - 'tom' mom is a female
         # - 'All persons have a father'
         # - 'The father of a father is a grandfather'
@@ -63,6 +64,6 @@ module Basic {
     
     # 6 Definitions let us give a name to a value and then subsequently refer to the
     # value by that name.
-    define toms_grandfather := (father father tom)
+    define toms_sandwitch := (exists ?x ?y . ((?x = father tom) & (tom = father ?y)))
     define I_am_not_my_father := (forall ?x . ?x =/= father ?x)
 }
