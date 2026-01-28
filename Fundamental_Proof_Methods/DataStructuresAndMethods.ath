@@ -1,0 +1,192 @@
+load "list-of"
+
+module Data {
+
+    # 0 Datatypes (Natural Numbers)
+    # We define Natural numbers (Peano arithmetic style).
+    # 'zero' is a constant constructor.
+    # 'S' is a unary, reflexive constructor.
+    datatype N := zero | (S N)
+
+    # Example terms:
+    (zero)
+    (S zero)
+    (S (S zero))
+    # ...
+
+    # Athena automatically generates "free-generation" axioms for datatypes.
+    # - Different constructor application create different elements (no-confusion)
+    # - Every element is represented by some constructor application (no-junk)
+    # We can inspect them using (datatype-axioms "N")
+    # (forall y1 . (~ ( zero = (S y1))))
+    # (forall x1 y1 .  ((S x1) = (S y1)) <==> (x1 = y1) )
+    # (forall v .  (v = zero) | (exists x1 .  (v = (S x1))) )
+
+    # 1 Datatypes (Sets?)
+    # If we try to define a Set as a datatype:
+    datatype MySet0 := null | (insert0 Int MySet0)
+    
+    # (datatype-axioms "MySet0")
+    # This enforces that {1, 3} is different from {3, 1}:
+    # (insert 1 (insert 3 null)) =/= (insert 3 (insert 1 null))
+
+    # 2 Structures
+    # We use 'structure' for types with a coarser identity relation (like Sets).
+    structure Set := empty | (insert Int Set)
+    
+    # (structure-axioms "Set")
+    # (forall y1 . (forall y2 . (not (empty = (insert y1 y2)))))
+    # (forall v . (v = empty) | (exists x1 x2 ( v = (insert x1 x2))))
+    
+    # Structure axioms do NOT include the no-confusion axiom for 'insert'.
+    # We must explicitly assert identity axioms for structures (e.g. set equality) later.
+
+    # 3 Polymorphism
+    # 3.1 Polymorphic Domains
+    # 'PolySet' is a sort constructor. It takes a sort S and returns a new sort.
+    domain (PolySet S)
+
+    # 3.2 Polymorphic Function Symbols
+    # We can declare functions that work over these polymorphic sorts.
+    # Signature: (S) [S (PolySet S)] -> Boolean
+    declare poly-in: (S) [S (PolySet S)] -> Boolean
+    
+    # Athena infers the most general sort (Hindley-Milner style inference):
+    # (poly-in ?x ?y) 
+    # ?x becomes ?x:'S, and ?y becomes ?y:(PolySet 'S)
+
+    # 3.3 Polymorphic Datatypes
+    # A list of any type T.
+    datatype (MyList T) := nil | (cons T (MyList T))
+    
+    # (datatype-axioms "MyList")
+    
+    # Example:
+    (cons 1 nil)          
+        # -> Sort is (MyList Int)
+    # (cons true nil)       
+        # -> Sort is (MyList Boolean)
+
+    # 4 Numerics
+    # Athena has built-in domains: Int and Real.
+    # Operators +, -, *, < are overloaded.
+
+    # Function symbols (create terms, do not compute immediately):
+    define int-term := (3 + 5) 
+    # Term: (+ 3 5)
+
+    # Primitive Procedures (perform computation immediately):
+    # plus, minus, times, div, less?
+    # (3 plus 5) 
+    # Result: 8
+
+    # Note: 'equal?' is a computation (procedure), '=' is a logic symbol (term).
+    # (3 equal? 3) -> true
+    # (3 = 3)      -> Term: (= 3 3)
+
+    # 5 Meta-identifiers
+    # The domain Ide contains quoted identifiers ('x, 'foo).
+    # Useful for modeling syntax (like lambda calculus variables).
+    
+    structure Exp := (Var Ide) 
+                   | (Lambda Ide Exp) 
+                   | (App Exp Exp)
+
+    define identity-func := (Lambda 'x (Var 'x))
+
+    # 6 Basic Deduction
+    # We assume some boolean premises to demonstrate methods.
+
+    # What about the AB?
+    # (ab)
+
+    declare A, B, C: Boolean
+    assert premise1 := (A & B)
+    assert premise2 := (not (not A))
+
+    # And now?
+    # (ab)
+
+    # !true-intro: Always returns true
+    # (!true-intro)
+
+    # !claim: 
+    # This method takes an arbitrary sentence p as input, and if p is in the assumption
+    # base, then it simply returns it back as the output
+    # (!claim premise1)
+
+    # !left-and / !right-and: Conjunction elimination
+    # (!left-and premise1)  
+    # Theorem: A
+    
+    # (!right-and premise1) 
+    # Theorem: B
+
+    # !dn: Double negation elimination
+    # (!dn premise2)        
+    # Theorem: A
+
+    # !both: Conjunction introduction
+    # Requires both parts to be in the Assumption Base
+    # (!both (!left-and premise1) (!right-and premise1))
+    # Theorem: (A & B)
+
+    # 7 Control
+    # 7.1 'let' for breaking down proofs
+    # We verify (B & A) given (A & B)
+    define commutativity-proof :=
+        let {
+            left-part  := (!left-and premise1);
+            right-part := (!right-and premise1)
+        }
+        (!both right-part left-part)
+
+    # 7.2 'conclude' (Conclusion-annotated deduction)
+    # acts as a sanity check. If the deduction doesn't yield A, this fails.
+    (conclude A (!left-and premise1))
+
+    # 7.3 'check' (Conditional)
+    # Evaluates conditions in order.
+    check {
+        (premise1 equal? true) => (!true-intro)
+        | else => (!claim premise1)
+    }
+
+    # 7.4 'match' (Classic pattern matching)
+    match [1 2] {
+        [] => 0
+        |
+        (list-of h t) => h
+    }
+
+    # 8 Defining Methods
+    # A generic method to commute any AND sentence.
+    # Note: Methods have dynamic assumption scoping.
+    # This version accepts the PREMISE itself as an argument to be composable.
+    
+    define commute-and-method := 
+        method (p)
+            match p {
+                (A & B) => 
+                    let {
+                        # We perform a deduction on the input p
+                        _ := (!left-and p);
+                        _ := (!right-and p)
+                    }
+                    # Now A and B are in the assumption base
+                    (!both B A)
+            }
+
+    # Test the method:
+    # (!commute-and-method premise1) 
+    # Theorem: (B & A)
+
+    # Composition example:
+    # Derive (B & A) from (not (not (A & B)))
+    assert complex-premise := (not (not (A & B)))
+    
+    # We compose !dn (double negation) with our commute method
+    # (!commute-and-method (!dn complex-premise))
+    # Theorem: (B & A)
+
+}
