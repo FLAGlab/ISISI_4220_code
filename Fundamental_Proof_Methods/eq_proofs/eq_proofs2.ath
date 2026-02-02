@@ -1,0 +1,20 @@
+load "eq_proofs1"
+extend-module EQ {
+    
+    # 1. Using 'chain' method to prove: 2 + 2 = 4
+    (!chain [ ((S S zero) + (S S zero))
+            = (S ((S S zero) + (S zero)))      [right_nonzero]
+            = (S (S ((S S zero) + zero)))      [right_nonzero]
+            = (S (S (S S zero)))             
+              [right_zero]
+    ])
+
+    # The way to define an alternative to (S zero)
+    declare one: N
+    assert one_definition := (one = S zero)
+
+    # 2. pick-any generates a universal quantify sentence 
+    # define Times_right_one := (forall n .  n * one = n)
+    # Prove Times_right_one!
+}
+

@@ -1,0 +1,19 @@
+load "eq_proofs4"
+extend-module EQ {
+    # 3. Defining precedence for function symbols
+    declare **: [N N] -> N [310]
+    assert Power_right_zero     := (forall n . n ** zero = one)
+    assert Power_right_nonzero  := (forall m n . m ** (S n) = m * (m ** n))
+
+
+    # 4. We want to prove: (x^2)^n = x^(2n)
+    # We define a "Property Procedure" that generates the sentence for a specific n.
+    define (power_square_property n) := 
+        (forall m . (m * m) ** n = m ** (n + n))
+
+    define power_square_theorem := (forall n . power_square_property n)
+
+    # Base case definition
+    # Now prove the base case...
+}
+

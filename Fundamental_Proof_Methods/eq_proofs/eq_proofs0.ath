@@ -1,0 +1,22 @@
+module EQ {
+
+    datatype N := zero | (S N)
+
+    declare Plus : [N N] -> N [+]
+    declare Times: [N N] -> N [*]
+
+    define [n m] := [?n:N ?m:N]
+
+    assert right_zero        := (forall n . n + zero = n)
+    assert left_zero         := (forall n . zero + n = n)  # This is a theorem...
+    assert right_nonzero     := (forall n m . n + (S m) = S (n + m))
+    assert left_nonzero      := (forall n m . (S n) + m = S (n + m)) # This is a theorem...
+    assert Times_zero        := (forall x . x * zero = zero)
+    assert Times_nonzero     := (forall x y . x * (S y) = (x * y) + x)
+    assert Times_associative := (forall x y z . (x * y) * z = x * (y * z))
+
+
+    # 0. This creates a theorem with the instance of right_zero
+    (!instance right_zero [(S zero)])
+    
+}
