@@ -1,0 +1,44 @@
+load "eq_proofs6"
+extend-module EQ {
+    # Base case definition
+    # Now prove the base case...
+    # define power_square_base :=
+    #     method ()
+    #         conclude (power_square_property zero)
+    #         pick-any n:N
+    #         (!chain [ ((n * n) ** zero)
+    #                 = one                       [Power_right_zero]
+    #                 = (n ** zero)               [Power_right_zero]
+    #                 = (n ** (zero + zero))      [right_zero] 
+    #         ])
+    # We can check that the proof works
+    # (!power_square_base)
+
+    define power_square_step :=
+        method (n)
+            let { previous_result := (power_square_property n) }
+            conclude (power_square_property (S n))
+                pick-any m:N
+                    (!combine-equations
+                   
+                        (!chain [   ((m * m) ** (S n))
+                                --> ((m * m) * ((m * m) ** n))  [Power_right_nonzero]
+                                --> ((m * m) * (m ** (n + n)))  [previous_result]
+                                --> (m * (m * (m ** (n + n))))  [Times_associative]
+                        ])
+                        (!chain [   (m ** ((S n) + (S n)))
+                                --> (m ** (S ((S n) + n)))      [right_nonzero]
+                                --> (m ** (S (S (n + n))))      [left_nonzero] 
+                                --> (m * (m ** (S (n + n))))    [Power_right_nonzero]
+                                --> (m * (m * (m ** (n + n))))  [Power_right_nonzero]
+                     
+                        ])
+                    )
+                
+    # 5 Proving Power Square by Induction: Using power_square_base and power_square_step
+    by-induction power_square_theorem {
+        zero    => (!power_square_base)
+        | (S n) => (!power_square_step n)
+    }
+}
+

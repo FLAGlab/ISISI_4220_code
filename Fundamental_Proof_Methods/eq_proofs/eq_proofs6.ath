@@ -1,0 +1,17 @@
+load "eq_proofs5"
+extend-module EQ {
+    # Base case definition
+    # Now prove the base case...
+    define power_square_base :=
+        method ()
+            conclude (power_square_property zero)
+            pick-any n:N
+            (!chain [ ((n * n) ** zero)
+                    = one                       [Power_right_zero]
+                    = (n ** zero)               [Power_right_zero]
+                    = (n ** (zero + zero))      [right_zero] 
+            ])
+    # We can check that the proof works
+    (!power_square_base)
+}
+

@@ -1,0 +1,16 @@
+load "eq_proofs3"
+extend-module EQ {
+    # Using induction to proof theorems
+    # define left_zero := (forall n . zero + n = n)
+    by-induction left_zero {
+        zero => conclude (zero + zero = zero)
+                    (!instance right_zero zero)
+        | (n as (S m)) => 
+            conclude (zero + n = n)
+            let {induction_hypothesis := (zero + m = m)}
+                (!chain [   (zero + S m)
+                        = (S (zero + m))     [right_nonzero]
+                        = (S m)              [induction_hypothesis]])
+    }
+}
+
