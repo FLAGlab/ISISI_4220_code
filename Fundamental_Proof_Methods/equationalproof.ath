@@ -1,0 +1,103 @@
+module EquationalProofs {
+
+    datatype N := zero | (S N)
+
+    declare Plus : [N N] -> N [+]
+    declare Times: [N N] -> N [*]
+
+    define [n m] := [?n:N ?m:N]
+
+    assert right_zero        := (forall n . n + zero = n)
+    assert left_zero         := (forall n . zero + n = n)
+    assert right_nonzero     := (forall n m . n + (S m) = S (n + m))
+    assert left_nonzero      := (forall n m . (S n) + m = S (n + m)) # This is a theorem...
+    assert Times_zero        := (forall x . x * zero = zero)
+    assert Times_nonzero     := (forall x y . x * (S y) = (x * y) + x)
+    assert Times_associative := (forall x y z . (x * y) * z = x * (y * z))
+
+
+    # 0. This creates a theorem with the instance of right_zero
+    (!instance right_zero [(S zero)])
+    
+    # 1. Using 'chain' method to prove: 2 + 2 = 4
+    (!chain [ ((S S zero) + (S S zero))
+            = (S ((S S zero) + (S zero)))      [right_nonzero]
+            = (S (S ((S S zero) + zero)))      [right_nonzero]
+            = (S (S (S S zero)))             
+              [right_zero]
+    ])
+
+    # The way to define an alternative to (S zero)
+    declare one: N
+    assert one_definition := (one = S zero)
+
+    # 2. pick-any generates a universal quantify sentence 
+    define Times_right_one := (forall n .  n * one = n)
+    conclude Times_right_one
+        pick-any n
+        (!chain [ (n * one)
+                = (n * (S zero))        [one_definition]
+                = ((n * zero) + n)      [Times_nonzero]
+                = (zero + n)            [Times_zero]
+                = n                     [left_zero] 
+        ])
+
+    # 3. Defining precedence for function symbols
+    declare **: [N N] -> N [310]
+    assert Power_right_zero     := (forall n . n ** zero = one)
+    assert Power_right_nonzero  := (forall m n . m ** (S n) = m * (m ** n))
+
+
+    # 4. We want to prove: (x^2)^n = x^(2n)
+    # We define a "Property Procedure" that generates the sentence for a specific n.
+    define (power_square_property n) := 
+        (forall m . (m * m) ** n = m ** (n + n))
+
+    define power_square_theorem := (forall n . power_square_property n)
+
+    # Base case definition
+    define power_square_base :=
+        method ()
+            conclude (power_square_property zero)
+            pick-any n:N
+            (!chain [ ((n * n) ** zero)
+                    = one                       [Power_right_zero]
+                    = (n ** zero)               [Power_right_zero]
+                    = (n ** (zero + zero))      [right_zero] 
+            ])
+
+    # We can check that the proof works
+
+    (!power_square_base)
+
+
+    # Using 'combine-equations' to merge two chains.
+    define power_square_step :=
+        method (n)
+            let { previous_result := (power_square_property n) }
+            conclude (power_square_property (S n))
+                pick-any m:N
+                    (!combine-equations
+                   
+                        (!chain [   ((m * m) ** (S n))
+                                --> ((m * m) * ((m * m) ** n))  [Power_right_nonzero]
+                                --> ((m * m) * (m ** (n + n)))  [previous_result]
+                                --> (m * (m * (m ** (n + n))))  [Times_associative]
+                        ])
+                        (!chain [   (m ** ((S n) + (S n)))
+                                --> (m ** (S ((S n) + n)))      [right_nonzero]
+                                --> (m ** (S (S (n + n))))      [left_nonzero] 
+                                --> (m * (m ** (S (n + n))))    [Power_right_nonzero]
+                                --> (m * (m * (m ** (n + n))))  [Power_right_nonzero]
+                     
+                        ])
+                    )
+                
+    # 5 Proving Power Square by Induction: Using power_square_base and power_square_step
+    by-induction power_square_theorem {
+        zero   => (!power_square_base)
+        | (S n) => (!power_square_step n)
+    }
+
+
+}

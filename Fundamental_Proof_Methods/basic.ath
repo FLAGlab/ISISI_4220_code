@@ -1,5 +1,4 @@
 # 0
-load "list-of"
 # loaj can also be given as a command line argument to Athena
 # take into account that ;; signals end of input in Athena' interactive mode.
 module Basic {
