@@ -8,7 +8,7 @@ module EquationalProofs {
     define [n m] := [?n:N ?m:N]
 
     assert right_zero        := (forall n . n + zero = n)
-    assert left_zero         := (forall n . zero + n = n)
+    assert left_zero         := (forall n . zero + n = n)  # This is a theorem...
     assert right_nonzero     := (forall n m . n + (S m) = S (n + m))
     assert left_nonzero      := (forall n m . (S n) + m = S (n + m)) # This is a theorem...
     assert Times_zero        := (forall x . x * zero = zero)
@@ -41,6 +41,20 @@ module EquationalProofs {
                 = (zero + n)            [Times_zero]
                 = n                     [left_zero] 
         ])
+
+
+    # Using induction to proof theorems
+    define left_zero := (forall n . zero + n = n)
+    by-induction left_zero {
+        zero => conclude (zero + zero = zero)
+                    (!instance right_zero zero)
+        | (n as (S m)) => 
+            conclude (zero + n = n)
+            let {induction_hypothesis := (zero + m = m)}
+                (!chain [   (zero + S m)
+                        = (S (zero + m))     [right_nonzero]
+                        = (S m)              [induction_hypothesis]])
+    }
 
     # 3. Defining precedence for function symbols
     declare **: [N N] -> N [310]
@@ -95,9 +109,8 @@ module EquationalProofs {
                 
     # 5 Proving Power Square by Induction: Using power_square_base and power_square_step
     by-induction power_square_theorem {
-        zero   => (!power_square_base)
+        zero    => (!power_square_base)
         | (S n) => (!power_square_step n)
     }
-
 
 }
