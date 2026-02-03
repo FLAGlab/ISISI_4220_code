@@ -1,0 +1,44 @@
+load "nat-power"
+
+module NList {
+
+    datatype NList := nil  | (:: N NList)
+    declare join: [NList NList] -> NList [++]
+    set-precedence :: 150
+    define [L L' L1 L2 L3] := [?L:NList ?L':NList ?L1:NList ?L2:NList ?L3:NList]
+    assert left_empty := (forall L . nil ++ L = L)
+    assert left_nonempty := (forall x L1 L2 . x::L1 ++ L2 = x::(L1 ++ L2))
+
+    define right_empty := (forall L . L ++ nil = L)
+
+    # Method for proving the right_empty base case
+    define (join_nil_base) := 
+        conclude (nil ++ nil = nil)
+            (!chain [(nil ++ nil) = nil [left_empty]])
+
+    # Method for proving the right_empty inductive step                
+    define (join_nil_step IH x L) := 
+        conclude (x::L ++ nil = x::L) 
+            (!chain [(x::L ++ nil)
+                = (x::(L ++ nil))      [left_nonempty]
+                = (x :: L)             [IH]])
+
+    # Proof of right_empty using induction over the datatype NList
+    by-induction right_empty {
+        nil => (!join_nil_base)
+        | (h::t) => let {IH := (t ++ nil = t)}
+                        (!join_nil_step IH h t)
+    }
+
+    # This is the same proof but without method definition
+    by-induction right_empty {
+        nil => (!chain [(nil ++ nil) = nil [left_empty]])
+    | (h::t) => 
+        let {IH := (t ++ nil = t)}
+            conclude (h::t ++ nil = h::t)
+            (!chain [(h::t ++ nil)
+                    = (h :: (t ++ nil))   [left_nonempty]
+                    = (h::t)              [IH]])
+    }
+
+} 
