@@ -1,0 +1,57 @@
+module SLogic {
+    declare A, B, C, C1, C2, E: Boolean
+
+    define A->B->A := (A ==> B ==> A)
+    conclude A->B->A
+        assume A 
+            assume B
+                (!claim A)
+
+    define A->B->A->B := ((A ==> B) ==> (A ==> B)) 
+    conclude A->B->A->B
+        assume (A ==> B) 
+            assume A 
+                (!mp (A ==> B) A)
+
+    conclude ((A ==> B ==> C) ==> (B ==> A ==> C))
+    assume hyp := (A ==> B ==> C)
+        assume B
+            assume A
+                let {B->C := (!mp hyp A)}
+                    conclude C 
+                        (!mp B->C B)
+
+    assert ( C1 | C2 ), ( C1 ==> B), ( C2 ==> B)
+    conclude B
+        (!cases (C1 | C2)
+                (C1 ==> B)
+                (C2 ==> B))
+    
+    assert premise_1 := (A ==> B & C)
+    assert premise_2 := (~ B) 
+    
+    (!by-contradiction (~ A)
+        assume A
+        let {p1 := conclude (B & C)
+                    (!mp premise_1 A);
+            _ := conclude B
+                    (!left-and p1)}
+            (!absurd B premise_2))
+
+  assert premise_01 := (A & B | (A ==> C))
+  assert premise_02 := (C <==> ~ E)
+  define goal := ((~ B) ==> (A ==> (~ E)))
+
+  conclude goal 
+    assume -B := (~ B)
+        assume A
+        conclude -E := (~ E)
+            (!cases premise_01
+                    assume (A & B)
+                    (!from-complements -E B -B)
+                    assume A=>C := (A ==> C)
+                    let {C=>-E := (!left-iff premise_02);
+                         C:= (!mp A=>C A)}
+                        (!mp C=>-E C))
+    
+}
