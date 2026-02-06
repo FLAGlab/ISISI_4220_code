@@ -1,0 +1,159 @@
+module LPoly {
+
+    datatype (List S) := nil | (:: S (List S))
+    declare join: (S) [(List S) (List S)] -> (List S) [++]
+    define [x y z x1 x2 h h1 h2] :=  [?x ?y ?z ?x1 ?x2 ?h ?h1 ?h2]
+
+    define [L L' L0 L1 L2 t t1 t2] :=
+        [?L:(List 'S1) ?L':(List 'S2) ?L0:(List 'S3) ?L1:(List 'S4) 
+            ?L2:(List 'S5) ?t:(List 'S6) ?t1:(List 'S7) ?t2:(List 'S8)]
+
+    set-precedence :: 150
+
+    assert left_empty    := (forall L . nil ++ L = L)
+    assert left_nonempty := (forall x L1 L2 . x::L1 ++ L2 =  x::(L1 ++ L2))
+
+
+    define right_empty := (forall L . L ++ nil = L)
+
+    by-induction right_empty {
+        nil => (!chain [(nil ++ nil) = nil [left_empty]])
+    | (L as (h::t)) => 
+        let {IH := (t ++ nil = t)}
+        conclude (h::t ++ nil = h::t)
+            (!chain [(h::t ++ nil)
+                = (h :: (t ++ nil))   [left_nonempty]
+                = L                   [IH]])
+    }
+
+    define join_associative :=
+        (forall L0 L1 L2 . (L0 ++  L1) ++ L2 = L0 ++ (L1 ++ L2))
+
+    by-induction join_associative {
+        nil =>
+            pick-any L1 L2
+            (!chain [((nil ++ L1) ++ L2)
+                --> (L1 ++ L2)            [left_empty]
+                <-- (nil ++ (L1 ++ L2))   [left_empty]])
+        | (L as (h::t)) => 
+            let {IH := (forall L1 L2 . (t ++ L1) ++ L2 = t ++ (L1 ++ L2))}
+            conclude (forall L1 L2 . (L ++ L1) ++ L2 = L ++ (L1 ++ L2))
+                pick-any L1 L2
+                (!chain 
+                    [((h::t ++ L1) ++ L2)
+                --> ((h::(t ++ L1)) ++ L2)  [left_nonempty]
+                --> (h::((t ++ L1) ++ L2))  [left_nonempty]
+                --> (h::(t ++ (L1 ++ L2)))  [IH]
+                <-- (h::t  ++ (L1 ++ L2))   [left_nonempty]])
+    }
+
+    declare reverse: (S) [(List S)] -> (List S) [120]
+
+    assert* reverse_def := [(reverse nil = nil) (reverse h::t = (reverse t) ++ h::nil)]
+
+    define [reverse_empty reverse_nonempty] := reverse_def 
+
+    define reverse_reverse_theorem := (forall L .  reverse reverse L = L)  
+
+    define reverse_join_1 := (forall L x . reverse (L ++ x::nil) = x::reverse L)
+
+    by-induction reverse_join_1 {
+        nil =>
+            conclude (forall x . reverse (nil ++ x::nil) = x::reverse nil)
+            pick-any x
+                (!chain [(reverse (nil ++ x::nil))
+                    --> (reverse x::nil)                      [left_empty]
+                    --> (reverse nil ++ x::nil)               [reverse_nonempty]
+                    --> (nil ++ x::nil)                       [reverse_empty]
+                    --> (x::nil)                              [left_empty]
+                    <-- (x::reverse nil)                      [reverse_empty]])
+        | (L as (h::t)) =>
+            conclude (forall x . reverse (L ++ x::nil) = x::reverse L)
+            let {ih := (forall x . reverse (t ++ x::nil) = x::reverse t)}
+                pick-any x
+                (!chain [(reverse (h::t ++ x::nil))
+                    --> (reverse h::(t ++ x::nil))         [left_nonempty]
+                    --> (reverse (t ++ x::nil) ++ h::nil)  [reverse_nonempty]
+                    --> (x::(reverse t) ++ h::nil)         [ih]
+                    --> (x::(reverse t ++ h::nil))         [left_nonempty]
+                    <-- (x::(reverse h::t))                [reverse_nonempty]])
+    }
+
+
+    by-induction reverse_reverse_theorem {
+        nil => conclude (reverse reverse nil = nil)
+                (!chain [(reverse reverse nil)
+                    --> (reverse nil)                [reverse_empty]
+                    --> nil                          [reverse_empty]])
+        | (list as (h::t)) =>
+            conclude (reverse reverse list = list)
+            let {ih := (reverse reverse t = t)}
+            (!chain [(reverse reverse h::t)
+                    --> (reverse (reverse t ++ h::nil)) [reverse_nonempty]
+                    --> (h::reverse reverse t)          [reverse_join_1]
+                    --> (h::t)                          [ih]])
+    }
+
+    define reverse_dist_join := (forall L1 L2 . reverse (L1 ++ L2) = reverse L2 ++ reverse L1)
+
+    by-induction reverse_dist_join {
+        nil => conclude (forall L2 . reverse (nil ++ L2) = reverse L2 ++ reverse nil)
+                pick-any L2
+                    (!chain [(reverse (nil ++ L2))
+                --> (reverse L2)                   [left_empty]
+                <-- ((reverse L2) ++ nil)          [right_empty]
+                <-- ((reverse L2) ++ reverse nil)  [reverse_empty]])		      
+        | (L as (h::t)) => conclude (forall L2 . reverse (L ++ L2) = reverse L2 ++ reverse L)
+                        let {ih := (forall L2 . reverse (t ++ L2) = reverse L2 ++ reverse t)}
+                        pick-any L2
+                            (!chain [(reverse (h::t ++ L2))
+                                --> (reverse (h :: (t ++ L2)))              [left_nonempty]
+                                --> (reverse (t ++ L2) ++ h::nil)           [reverse_nonempty]
+                                --> ((reverse L2 ++ reverse t) ++ h::nil)   [ih]
+                                --> (reverse L2 ++ reverse t ++ h::nil)     [join_associative]
+                                <-- (reverse L2 ++ reverse h::t)            [reverse_nonempty]])
+    }
+
+    by-induction reverse_reverse_theorem {
+        nil => conclude (reverse reverse nil = nil)
+                (!chain [(reverse reverse nil)
+                    --> (reverse nil)                [reverse_empty]
+                    --> nil                          [reverse_empty]])
+        | (list as (h::t)) =>
+            conclude (reverse reverse list = list)
+            let {ih := (reverse reverse t = t)}
+            (!chain [(reverse reverse h::t)
+                --> (reverse (reverse t ++ h::nil))                  [reverse_nonempty]
+                --> (reverse h::nil ++ reverse reverse t)            [reverse_dist_join]
+                --> ((reverse nil ++ h::nil) ++ reverse reverse t)   [reverse_nonempty]
+                --> ((nil ++ h::nil) ++ reverse reverse t)           [reverse_empty]
+                --> ((h::nil) ++ reverse reverse t)                  [left_empty]
+                --> ((h::nil) ++ t)                                  [ih]
+                --> (h::(nil ++ t))                                  [left_nonempty]
+                    --> (h::t)                                           [left_empty]])
+    }
+
+    conclude reverse_singleton := (forall x . reverse x::nil = x::nil)
+    pick-any x
+    (!chain [(reverse x::nil)
+        --> (reverse nil ++ x::nil)   [reverse_nonempty]
+        --> (nil ++ x::nil)           [reverse_empty]
+        --> (x::nil)                  [left_empty]])
+
+    by-induction reverse_reverse_theorem {
+    nil => conclude (reverse reverse nil = nil)
+            (!chain [(reverse reverse nil)
+                --> (reverse nil)                [reverse_empty]
+                --> nil                          [reverse_empty]])
+    | (list as (h::t)) =>
+        conclude (reverse reverse list = list)
+        let {ih := (reverse reverse t = t)}
+        (!chain [(reverse reverse h::t)
+            --> (reverse (reverse t ++ h::nil))                  [reverse_nonempty]
+            --> (reverse h::nil ++ reverse reverse t)            [reverse_dist_join]
+            --> ((h::nil) ++ reverse reverse t)                  [reverse_singleton]
+            --> ((h::nil) ++ t)                                  [ih]
+            --> (h::(nil ++ t))                                  [left_nonempty]
+                --> (h::t)                                           [left_empty]])
+    }
+}
