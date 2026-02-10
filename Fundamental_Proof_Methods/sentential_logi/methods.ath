@@ -1,0 +1,305 @@
+
+declare A, A1, A2, A3, B, C, C1, C2, C3, D, E, F, G, H, I, J: Boolean
+
+
+module Recursive_Proof_Methods {
+
+  define (dn* premise) := 
+    match premise {
+      (~ (~ p)) => let {_ := conclude p 
+                               (!dn premise)}
+                     (!dn* p)
+    | _ => (!claim premise)
+    }
+
+
+  define long_negation := (~ ~ ~ ~ ~ ~ ~ A)
+
+  assume long_negation (!dn* long_negation)
+
+  define (dn* premise) := 
+    match premise {
+        (~ (~ p)) => (!dn* (!dn premise))
+        | _ => (!claim premise)
+    }
+
+  assume h := (~ long_negation)
+    (!dn* h) 
+
+  define (import premise) := 
+    match premise {
+      (p ==> (q ==> r)) => assume (p & q)
+                             let {q=>r := (!mp premise p)}
+                               (!mp q=>r q)
+    }
+
+  assume h := (A ==> B ==> C)
+    (!import h)
+
+  define (ref_equiv p) :=
+    (!equiv assume p (!claim p) 
+            assume p (!claim p))
+
+  # not_cong: Congruence rule for negation
+  # Given a biconditional (p1 <==> p2), proves that (~ p1) <==> (~ p2)
+  # This establishes that equivalence is preserved under negation
+  define (not_cong premise) := 
+    match premise {
+      (p1 <==> p2) => 
+        let {not_p1=>not_p2 := assume not_p1 := (~ p1)
+                           (!by-contradiction (~ p2)
+                             assume p2 
+                               (!absurd (!mp (!right-iff premise) p2)
+                                        not_p1));
+             not_p2=>not_p1 := assume not_p2 := (~ p2)
+                           (!by-contradiction (~ p1)
+                             assume p1
+                               (!absurd (!mp (!left-iff premise) p1) 
+                                        not_p2))}
+          (!equiv not_p1=>not_p2 not_p2=>not_p1)
+    }
+
+  # and_cong: Congruence rule for conjunction
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 & p2) <==> (q1 & q2)
+  define (and_cong premise1 premise2) :=
+    match [premise1 premise2] {
+      [(p1 <==> q1) (p2 <==> q2)] =>
+          let {p1&p2=>q1&q2 := assume (p1 & p2)
+                                 (!both (!mp (!left-iff premise1) p1)
+                                        (!mp (!left-iff premise2) p2));
+               q1&q2=>p1&p2 := assume (q1 & q2)
+                                 (!both (!mp (!right-iff premise1) q1)
+                                        (!mp (!right-iff premise2) q2))}
+            (!equiv p1&p2=>q1&q2 q1&q2=>p1&p2)
+    } 
+
+  # if_cong: Congruence rule for implication
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 ==> p2) <==> (q1 ==> q2)
+  define (if_cong premise1 premise2) :=
+    match [premise1 premise2] {
+      [(p1 <==> q1) (p2 <==> q2)] =>
+          let {p1=>p2_gives_q1=>q2 := 
+                  assume (p1 ==> p2)
+                    assume q1
+                      (!mp (!left-iff premise2)
+                           (!mp (p1 ==> p2)
+                                (!mp (!right-iff premise1) q1)));
+               q1=>q2_gives_p1=>p2 := 
+                  assume (q1 ==> q2)
+                    assume p1
+                      (!mp (!right-iff premise2)
+                           (!mp (q1 ==> q2)
+                                (!mp (!left-iff premise1) p1)))}
+            (!equiv p1=>p2_gives_q1=>q2 q1=>q2_gives_p1=>p2)
+    }
+  
+  # or_cong: Congruence rule for disjunction
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 | p2) <==> (q1 | q2)
+  define (or_cong premise1 premise2) := 
+    match [premise1 premise2] {
+      [(p1 <==> q1) (p2 <==> q2)] =>
+        let {cond_1 := assume (p1 | p2)
+                          (!cases (p1 | p2)
+                            assume p1 
+                              (!left-either (!mp (!left-iff premise1) 
+                                                p1) 
+                                            q2)
+                            assume p2
+                              (!right-either q1 
+                                            (!mp (!left-iff premise2) 
+                                                  p2)));
+              cond_2 := assume (q1 | q2)
+                          (!cases (q1 | q2)
+                            assume q1
+                              (!left-either (!mp (!right-iff premise1) 
+                                                  q1) 
+                                            p2)
+                            assume q2
+                              (!right-either p1 
+                                              (!mp (!right-iff premise2) 
+                                                  q2)))}
+          (!equiv cond_1 cond_2)
+    }
+
+  # iff_cong: Congruence rule for biconditional
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 <==> p2) <==> (q1 <==> q2)
+  define (iff_cong premise1 premise2) := 
+  match [premise1 premise2] {
+    [(p1 <==> q1) (p2 <==> q2)] =>
+      let {cond_1 := assume (p1 <==> p2)
+                        (!equiv assume q1
+                                  (!mp (!left-iff premise2)
+                                      (!mp (!left-iff (p1 <==> p2))
+                                            (!mp (!right-iff premise1) 
+                                                q1)))
+                                assume q2
+                                  (!mp (!left-iff premise1)
+                                      (!mp (!right-iff (p1 <==> p2))
+                                            (!mp (!right-iff premise2) 
+                                                q2))));
+            cond_2 := assume (q1 <==> q2)
+                        (!equiv assume p1
+                                  (!mp (!right-iff premise2)
+                                      (!mp (!left-iff (q1 <==> q2))
+                                            (!mp (!left-iff premise1) 
+                                                p1)))
+                                assume p2
+                                  (!mp (!right-iff premise1)
+                                      (!mp (!right-iff (q1 <==> q2))
+                                            (!mp (!left-iff premise2) 
+                                                p2))))}
+      (!equiv cond_1 cond_2)
+  }
+
+  # find_first_element: Finds the first element in a list satisfying a method
+  # Given a method M and a list, recursively applies M to each element until one succeeds
+  define (find_first_element M list) :=
+    match list {
+      (list-of first rest) => 
+        try { (!M first) | (!find_first_element M rest) }
+    }
+
+  # choose_cong_method: Selects the appropriate congruence method based on sentential constructor
+  # Given a sentential conector (pc), returns the corresponding congruence method defined above
+  define (choose_cong_method pc) :=
+    match pc {
+        &    => and_cong
+      | |    => or_cong
+      | ==>  => if_cong
+      | <==> => iff_cong
+    }
+
+  # prove_equiv: Proves equivalence between two propositions using available methods
+  define (prove_equiv p q methods) :=
+    try {
+      (!find_first_element method (M) 
+                             try { (!equiv assume p (!M p) assume q (!M q))
+                                 | (!equiv assume p (!M p q) assume q (!M q p)) }
+                           methods)
+    | check {
+        (p equal? q) => (!ref_equiv p)
+      | else => match [p q] {
+                  [(~ p1) (~ q1)] =>
+                     (!not_cong (!prove_equiv p1 q1 methods))
+                # some-sent-con is a build in method that match the any
+                # sentential constructor, check section 2.11 (pag. 83) for detail.
+                | [((some-sent-con pc) p1 p2) (pc q1 q2)] =>
+                      (!(choose_cong_method pc) 
+                          (!prove_equiv p1 q1 methods)
+                          (!prove_equiv p2 q2 methods))
+                }
+      }
+    }
+
+  define (transform p q methods) := 
+    let {E := conclude (p <==> q)
+                (!prove_equiv p q methods)}
+       conclude q
+          (!mp (!left-iff E) p)
+
+  # Example of usage for transform
+  assert (~ ~ A ==> ~ (B & C))
+  (!transform (~ ~ A ==> ~ (B & C)) (A ==> ~ B | ~ C) [dm bdn])
+
+  # This is the same without asserting the premise, but I think the former is clearer
+  # let {h := (~ A ==> ~ (B & C));
+  #      g := (~ A ==> ~B | ~C)}
+  #   conclude (h ==> g)
+  #     assume h
+  #       (!transform h g [dm bdn])
+
+  # define (decompose p K) := 
+  #   match p {
+  #     (and (some-list _)) => 
+  #       (!decompose (!left-and p) 
+  #                   method (L)
+  #                     (!decompose (!right-and p) 
+  #                                 method (R)
+  #                                   (!K (join L [p] R))))
+  #   | _ => (!K [p])
+  #   }                                                        
+
+  # define (decompose p K) := 
+  #   letrec {loop := method (p K)
+  #                     match p {
+  #                       (and (list-of _ _)) => 
+  #                         (!loop (!left-and p) 
+  #                                method (L)
+  #                                  (!loop (!right-and p) 
+  #                                         method (R)
+  #                                           (!K (join L [p] R))))
+  #                     | _ => (!K [p])
+  #                     }}
+  #     (!loop p method (results) (!K (dedup results)))                                                        
+
+  # assume h := (and A B C D E)
+  #   (!and-intro [E D C B A])
+
+} EOF 
+
+module Heuristics {
+
+  let {premise_1 := (A ==> B & C);
+       premise_2 := (A & E)}
+    assume (premise_1 & premise_2)
+      let {conj := let {cond := (!claim (A ==> B & C));
+                        ant :=  let {conj := (!claim (A & E))}
+                                  (!left-and conj)}
+                     (!mp cond ant)}
+        (!right-and conj)
+    
+  let {premise_1 := (A ==> B & C);
+       premise_2 := (A & E)}
+    assume (premise_1 & premise_2)       
+      let {conj := (!mp (A ==> B & C)
+                        (!left-and (A & E)))}
+        (!right-and conj)
+  
+  let {premise_1 := (A | (B ==> C)); 
+       premise_2 := (C <==> D & E);
+       premise_3 := (B & ~ A)}
+    assume (premise_1 & premise_2 & premise_3)
+      let {left := (!left-and (B & ~ A));
+           right := 
+             let {conj := 
+                   let {bcond := (!claim (C <==> D & E));
+                        _ := let {disj := (!claim (A | (B ==> C)));
+                                  cnd1 := assume A
+                                            (!from-complements 
+                                              (B ==> C) 
+                                              A 
+                                              (!right-and premise_3));
+		  	          cnd2 := assume (B ==> C) 
+                                            (!claim (B ==> C));
+                                  cond := (!cases disj cnd1 cnd2)}
+                               (!mp cond B)}
+                     (!mp (!left-iff bcond) C)}
+               (!left-and conj)}
+        (!both B D)
+
+  let {premise_1 := (A | (B ==> C)); 
+       premise_2 := (C <==> D & E);
+       premise_3 := (B & ~ A)}
+    assume (premise_1 & premise_2 & premise_3)
+      let {left := (!left-and (B & ~ A));
+           right := let {B=>C := (!cases (A | (B ==> C))
+                                   assume A
+                                     (!from-complements 
+                                       (B ==> C)  
+                                       A 
+                                       (!right-and premise_3))
+                                   assume h := (B ==> C) 
+                                     (!claim h));
+                         _ := (!mp B=>C B);
+                         D&E := (!mp conclude (C ==> D & E)
+                                       (!left-iff premise_2)
+                                     C)}
+                      (!left-and D&E)}
+        (!both B D)
+
+}
+
