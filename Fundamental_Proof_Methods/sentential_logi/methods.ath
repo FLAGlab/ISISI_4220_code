@@ -167,10 +167,10 @@ module Recursive_Proof_Methods {
   # Given a sentential conector (pc), returns the corresponding congruence method defined above
   define (choose_cong_method pc) :=
     match pc {
-      &    => and_cong
-    | |    => or_cong
-    | ==>  => if_cong
-    | <==> => iff_cong
+        &    => and_cong
+      | |    => or_cong
+      | ==>  => if_cong
+      | <==> => iff_cong
     }
 
   # prove_equiv: Proves equivalence between two propositions using available methods
@@ -201,41 +201,46 @@ module Recursive_Proof_Methods {
        conclude q
           (!mp (!left-iff E) p)
 
+  # Example of usage for transform
+  assert (~ ~ A ==> ~ (B & C))
+  (!transform (~ ~ A ==> ~ (B & C)) (A ==> ~ B | ~ C) [dm bdn])
 
-  let {h := (~ A ==> ~ (B & C));
-       g := (~ A ==> ~B | ~C)}
-    conclude (h ==> g)
-      assume h
-        (!transform h g [dm bdn])
+  # This is the same without asserting the premise, but I think the former is clearer
+  # let {h := (~ A ==> ~ (B & C));
+  #      g := (~ A ==> ~B | ~C)}
+  #   conclude (h ==> g)
+  #     assume h
+  #       (!transform h g [dm bdn])
 
-  define (decompose p K) := 
-    match p {
-      (and (some-list _)) => 
-        (!decompose (!left-and p) 
-                    method (L)
-                      (!decompose (!right-and p) 
-                                  method (R)
-                                    (!K (join L [p] R))))
-    | _ => (!K [p])
-    }                                                        
+  # define (decompose p K) := 
+  #   match p {
+  #     (and (some-list _)) => 
+  #       (!decompose (!left-and p) 
+  #                   method (L)
+  #                     (!decompose (!right-and p) 
+  #                                 method (R)
+  #                                   (!K (join L [p] R))))
+  #   | _ => (!K [p])
+  #   }                                                        
 
-  define (decompose p K) := 
-    letrec {loop := method (p K)
-                      match p {
-                        (and (list-of _ _)) => 
-                          (!loop (!left-and p) 
-                                 method (L)
-                                   (!loop (!right-and p) 
-                                          method (R)
-                                            (!K (join L [p] R))))
-                      | _ => (!K [p])
-                      }}
-      (!loop p method (results) (!K (dedup results)))                                                        
+  # define (decompose p K) := 
+  #   letrec {loop := method (p K)
+  #                     match p {
+  #                       (and (list-of _ _)) => 
+  #                         (!loop (!left-and p) 
+  #                                method (L)
+  #                                  (!loop (!right-and p) 
+  #                                         method (R)
+  #                                           (!K (join L [p] R))))
+  #                     | _ => (!K [p])
+  #                     }}
+  #     (!loop p method (results) (!K (dedup results)))                                                        
 
-  assume h := (and A B C D E)
-    (!and-intro [E D C B A])
+  # assume h := (and A B C D E)
+  #   (!and-intro [E D C B A])
 
-} 
+} EOF 
+
 module Heuristics {
 
   let {premise_1 := (A ==> B & C);
