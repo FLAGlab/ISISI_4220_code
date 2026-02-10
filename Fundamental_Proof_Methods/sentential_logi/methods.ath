@@ -40,7 +40,9 @@ module Recursive_Proof_Methods {
     (!equiv assume p (!claim p) 
             assume p (!claim p))
 
-
+  # not_cong: Congruence rule for negation
+  # Given a biconditional (p1 <==> p2), proves that (~ p1) <==> (~ p2)
+  # This establishes that equivalence is preserved under negation
   define (not_cong premise) := 
     match premise {
       (p1 <==> p2) => 
@@ -57,6 +59,9 @@ module Recursive_Proof_Methods {
           (!equiv not_p1=>not_p2 not_p2=>not_p1)
     }
 
+  # and_cong: Congruence rule for conjunction
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 & p2) <==> (q1 & q2)
   define (and_cong premise1 premise2) :=
     match [premise1 premise2] {
       [(p1 <==> q1) (p2 <==> q2)] =>
@@ -69,7 +74,9 @@ module Recursive_Proof_Methods {
             (!equiv p1&p2=>q1&q2 q1&q2=>p1&p2)
     } 
 
-
+  # if_cong: Congruence rule for implication
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 ==> p2) <==> (q1 ==> q2)
   define (if_cong premise1 premise2) :=
     match [premise1 premise2] {
       [(p1 <==> q1) (p2 <==> q2)] =>
@@ -87,34 +94,99 @@ module Recursive_Proof_Methods {
                                 (!mp (!left-iff premise1) p1)))}
             (!equiv p1=>p2_gives_q1=>q2 q1=>q2_gives_p1=>p2)
     }
+  
+  # or_cong: Congruence rule for disjunction
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 | p2) <==> (q1 | q2)
+  define (or_cong premise1 premise2) := 
+    match [premise1 premise2] {
+      [(p1 <==> q1) (p2 <==> q2)] =>
+        let {cond_1 := assume (p1 | p2)
+                          (!cases (p1 | p2)
+                            assume p1 
+                              (!left-either (!mp (!left-iff premise1) 
+                                                p1) 
+                                            q2)
+                            assume p2
+                              (!right-either q1 
+                                            (!mp (!left-iff premise2) 
+                                                  p2)));
+              cond_2 := assume (q1 | q2)
+                          (!cases (q1 | q2)
+                            assume q1
+                              (!left-either (!mp (!right-iff premise1) 
+                                                  q1) 
+                                            p2)
+                            assume q2
+                              (!right-either p1 
+                                              (!mp (!right-iff premise2) 
+                                                  q2)))}
+          (!equiv cond_1 cond_2)
+    }
 
+  # iff_cong: Congruence rule for biconditional
+  # Given two biconditionals (p1 <==> q1) and (p2 <==> q2)
+  # proves that (p1 <==> p2) <==> (q1 <==> q2)
+  define (iff_cong premise1 premise2) := 
+  match [premise1 premise2] {
+    [(p1 <==> q1) (p2 <==> q2)] =>
+      let {cond_1 := assume (p1 <==> p2)
+                        (!equiv assume q1
+                                  (!mp (!left-iff premise2)
+                                      (!mp (!left-iff (p1 <==> p2))
+                                            (!mp (!right-iff premise1) 
+                                                q1)))
+                                assume q2
+                                  (!mp (!left-iff premise1)
+                                      (!mp (!right-iff (p1 <==> p2))
+                                            (!mp (!right-iff premise2) 
+                                                q2))));
+            cond_2 := assume (q1 <==> q2)
+                        (!equiv assume p1
+                                  (!mp (!right-iff premise2)
+                                      (!mp (!left-iff (q1 <==> q2))
+                                            (!mp (!left-iff premise1) 
+                                                p1)))
+                                assume p2
+                                  (!mp (!right-iff premise1)
+                                      (!mp (!right-iff (q1 <==> q2))
+                                            (!mp (!left-iff premise2) 
+                                                p2))))}
+      (!equiv cond_1 cond_2)
+  }
+
+  # find_first_element: Finds the first element in a list satisfying a method
+  # Given a method M and a list, recursively applies M to each element until one succeeds
   define (find_first_element M list) :=
     match list {
       (list-of first rest) => 
         try { (!M first) | (!find_first_element M rest) }
     }
 
+  # choose_cong_method: Selects the appropriate congruence method based on sentential constructor
+  # Given a sentential conector (pc), returns the corresponding congruence method defined above
   define (choose_cong_method pc) :=
     match pc {
       &    => and_cong
-    | |    => or-cong
+    | |    => or_cong
     | ==>  => if_cong
-    | <==> => iff-cong
+    | <==> => iff_cong
     }
 
+  # prove_equiv: Proves equivalence between two propositions using available methods
   define (prove_equiv p q methods) :=
     try {
       (!find_first_element method (M) 
-                             try { (!equiv assume p (!M p)
-                                           assume q (!M q))
-                                 | (!equiv assume p (!M p q)
-                                           assume q (!M q p)) }
+                             try { (!equiv assume p (!M p) assume q (!M q))
+                                 | (!equiv assume p (!M p q) assume q (!M q p)) }
                            methods)
     | check {
         (p equal? q) => (!ref_equiv p)
       | else => match [p q] {
                   [(~ p1) (~ q1)] =>
                      (!not_cong (!prove_equiv p1 q1 methods))
+                # some-sent-con is a build in method that match the any
+                # sentential constructor, check section 2.11 (pag. 83) for detail.
                 | [((some-sent-con pc) p1 p2) (pc q1 q2)] =>
                       (!(choose_cong_method pc) 
                           (!prove_equiv p1 q1 methods)
