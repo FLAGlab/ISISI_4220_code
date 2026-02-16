@@ -1,0 +1,68 @@
+module Force {
+    declare A, B, C, E: Boolean
+    assert premise_01 := (A & B | (A ==> C))
+    assert premise_02 := (C <==> ~ E)
+    define goal := ((~ B) ==> (A ==> (~ E)))
+
+    conclude goal
+        assume (~B)
+            (!force (A ==> ~E))
+    
+    # Now we need to solve (A ==> ~E)
+
+    conclude goal
+        assume (~B)
+            assume A
+            (!force (~E))
+
+    # Now we need to solve (~E)
+
+    conclude goal
+        assume (~B)
+            assume A
+                (!cases 
+                    premise_01 # (A & B) | (A ==> C)
+                        (!force ((A & B) ==> (~E) ))  #sub_goal_0
+                        (!force ((A ==> C) ==> (~E) )) #sub_goal_1
+                )
+    
+    # Now we need to solve the sub goals
+    # sub_goal_0: (A & B) ==> (~E)
+    conclude goal
+        assume (~B)
+            assume A
+                (!cases 
+                    premise_01 # (A & B) | (A ==> C)
+                        # sub_goal_0: (A & B) ==> (~E)
+                        (
+                            assume hyp:= (A & B)
+                                # (~B) is in the temporal AB
+                                (!from-complements (~E) (!right-and hyp) (~B))
+                        )
+                        (!force ((A ==> C) ==> (~E) )) #Sub_goal_1
+                )
+
+    # Now we need to solve the sub goals
+    # sub_goal_1: (A ==> C) ==> (~E) 
+    conclude goal
+        assume (~B)
+            assume A
+                (!cases 
+                    premise_01 # (A & B) | (A ==> C)
+                        # sub_goal_0: (A & B) ==> (~E)
+                        (
+                            assume hyp:= (A & B)
+                                # (~B) is in the temporal AB
+                                (!from-complements (~E) (!right-and hyp) (~B))
+                        )
+                        # sub_goal_1: (A ==> C) ==> (~E) 
+                        # Until this point we have not used the premise_02...
+                        # premise_02 := (C <==> ~ E)
+                        (
+                            assume A->C := (A ==> C)
+                                let {_C := (!mp A->C A);
+                                      C->-E := (!left-iff premise_02)}
+                                (!mp C->-E C)
+                        ) 
+                )
+}
