@@ -37,21 +37,5 @@ module SLogic {
             _ := conclude B
                     (!left-and p1)}
             (!absurd B premise_2))
-
-  assert premise_01 := (A & B | (A ==> C))
-  assert premise_02 := (C <==> ~ E)
-  define goal := ((~ B) ==> (A ==> (~ E)))
-
-  conclude goal 
-    assume -B := (~ B)
-        assume A
-        conclude -E := (~ E)
-            (!cases premise_01
-                    assume (A & B)
-                    (!from-complements -E B -B)
-                    assume A=>C := (A ==> C)
-                    let {C=>-E := (!left-iff premise_02);
-                         C:= (!mp A=>C A)}
-                        (!mp C=>-E C))
     
 }
