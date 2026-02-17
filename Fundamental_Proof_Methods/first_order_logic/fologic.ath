@@ -1,0 +1,15 @@
+module FOLogic {
+    declare x, y : Int
+    
+    
+    define p(x)&q(x)->p(y)&q(y) := (forall x . P(x)&Q(x)) ==> (forall y . (Py)) & (forall y . Q(y)) 
+    conclude 
+        assume hyp := (forall x . P x & Q x)
+            let {all-P := pick-any y:Object
+                    conclude (P y)
+                        (!left-and (!uspec hyp y));
+                all-Q := pick-any y:Object
+                    conclude (Q y)
+                        (!right-and (!uspec hyp y))}
+                (!both all-P all-Q)
+}
