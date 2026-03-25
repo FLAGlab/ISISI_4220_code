@@ -1,0 +1,21 @@
+load "bintree"
+
+open BinaryTree
+
+define tree1 := 
+   (node (node null 
+              2
+              (node (node null
+                          3
+                          null)
+                    5
+                    null))
+         7
+         (node (node null
+                     11
+                     null)
+                13
+                null))
+                    
+
+(eval inorder tree1)

@@ -1,0 +1,24 @@
+load "list-of"
+
+module BinaryTree {
+    datatype (BinaryTree T) := null 
+                     | (node (BinaryTree T) T (BinaryTree T))
+    assert (datatype-axioms "BinaryTree")
+
+    define ++ := List.++
+    define [x y T L R] :=
+           [?x ?y ?T:(BinaryTree 'S1) ?L:(BinaryTree 'S3) ?R:(BinaryTree 'S4)]
+
+    declare in: (S) [S (BinaryTree S)] -> Boolean
+
+    assert* empty-in := (~ x in null)
+    assert* nonempty-in := (x in (node L y R) <==> x = y | x in L | x in R)
+
+    
+
+    declare inorder: (S) [(BinaryTree S)] -> (List S)
+
+    assert* empty-inorder := ((inorder null) = nil)
+    assert* nonempty-inorder := (inorder (node L x R) = (inorder L) ++ x::inorder R)
+
+}
